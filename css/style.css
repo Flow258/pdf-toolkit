@@ -248,9 +248,23 @@ input[type=range]{width:100%;accent-color:var(--blue)}
   .wmgrid > div:last-child{position:static;order:-1}
 }
 @media (max-width:560px){
-  .site-header nav a.opt{display:none}
+  .site-header nav{display:none}
+  .site-header .wrap{gap:10px}
+  .install-btn .txt{display:none}
   .hero-art{height:330px;transform:scale(.8)}
   .pgrid{grid-template-columns:repeat(auto-fill,minmax(104px,1fr));gap:10px}
   .result{padding:20px}
   .pgtools .input{width:100%}
 }
+
+/* extras */
+.site-header .wrap{gap:12px}
+#install-slot:empty{display:none}
+.langbtn{white-space:nowrap}
+.tool-info{margin-top:54px;padding-top:30px;border-top:1px solid var(--line);max-width:760px}
+.tool-info h2{font-size:1.5rem;font-weight:800;margin-bottom:14px}
+.tool-info h2:not(:first-child){margin-top:34px}
+.tool-info h3{font-size:1.1rem;font-weight:700;margin-bottom:6px}
+.tool-info .sub{color:var(--muted)}
+footer a.support{font-weight:700}
+.tint-sky{--tint:var(--sky)}.tint-mint{--tint:var(--mint)}.tint-lilac{--tint:var(--lilac)}
