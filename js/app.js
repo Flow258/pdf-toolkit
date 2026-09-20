@@ -10,7 +10,12 @@ class UserError extends Error {}
 class Cancelled extends Error {}
 const tick = () => new Promise(r => setTimeout(r, 0));
 const state = { handoff: null, task: null };
-const CMAP = 'vendor/cmaps/';
+const SCRIPT_SRC = document.currentScript ? document.currentScript.src : location.href;
+const BASE = new URL('../', SCRIPT_SRC);          /* site root, wherever the site is hosted */
+const BASE_PATH = BASE.pathname;
+const CMAP = new URL('vendor/cmaps/', BASE).href;
+const CONFIG = Object.assign({ supportUrl: '', supportLabel: 'Support this project' }, window.PDFTK_CONFIG || {});
+const I18N = window.PDFTK_I18N;
 
 function h(tag, props, ...kids) {
   const el = document.createElement(tag);
@@ -114,7 +119,7 @@ function moveItem(arr, from, to, after) {
 /* ---------- libraries ---------- */
 const libsReady = () => !!(window.PDFLib && window.pdfjsLib && window.JSZip);
 if (window.pdfjsLib) {
-  pdfjsLib.GlobalWorkerOptions.workerSrc = 'vendor/pdf.worker.min.js';
+  pdfjsLib.GlobalWorkerOptions.workerSrc = new URL('vendor/pdf.worker.min.js', BASE).href;
 }
 const stamp = doc => { doc.setProducer('PDF Toolkit'); doc.setCreator('PDF Toolkit'); };
 
@@ -267,7 +272,7 @@ function rangeField(label, { min, max, step = 1, value, unit = '', onInput }) {
 }
 function fileBar(item, onChange) {
   return h('div', { class: 'filebar' }, ico('file', 26),
-    h('div', { class: 'fb-main' }, h('strong', { class: 'fb-name' }, item.name), h('span', { class: 'fb-meta' }, `${plural(item.pageCount, 'page')} · ${fmtBytes(item.size)}`)),
+    h('div', { class: 'fb-main' }, h('strong', { class: 'fb-name', 'data-notr': '' }, item.name), h('span', { class: 'fb-meta' }, `${plural(item.pageCount, 'page')} · ${fmtBytes(item.size)}`)),
     h('button', { class: 'btn small ghost', onclick: onChange }, 'Change file'));
 }
 
@@ -303,14 +308,14 @@ function showResult(root, { title, primary, stats, warn, extras, keepId, reset }
     h('h2', {}, h('span', { class: 'okdot' }, ico('check', 20)), title),
     stats && h('p', { class: 'stats' + (warn ? ' warn' : '') }, stats), btns);
   if (extras && extras.length) {
-    card.append(h('div', { class: 'gallery' }, extras.map(x => h('div', { class: 'gcard' }, x.canvas, h('small', { title: x.name }, x.name),
+    card.append(h('div', { class: 'gallery' }, extras.map(x => h('div', { class: 'gcard' }, x.canvas, h('small', { 'data-notr': '', title: x.name }, x.name),
       h('button', { class: 'btn small ghost', onclick: () => saveBlob(x.blob, x.name) }, 'Save')))));
   }
   if (keepId && primary.blob.type === 'application/pdf') {
     card.append(h('div', { class: 'keep' }, h('p', {}, 'Keep working on this file'),
       h('div', { class: 'chips', style: { margin: 0 } }, KEEP.filter(k => k !== keepId).map(k => {
         const t = TOOLS.find(x => x.id === k);
-        return h('button', { class: 'chip', onclick: () => { state.handoff = new File([primary.blob], primary.name, { type: 'application/pdf' }); location.hash = '#/' + k; } }, t.name);
+        return h('button', { class: 'chip', onclick: () => { state.handoff = new File([primary.blob], primary.name, { type: 'application/pdf' }); navigate(toolHref(k)); } }, t.name);
       }))));
   }
   root.replaceChildren(card);
@@ -461,7 +466,7 @@ function toolMerge(root) {
       if (it.doc) lazy(thumb, () => enqueue(async () => { try { await drawPageThumb(it.doc, 1, thumb.firstChild, 52 / 68); } catch (_) { /* ignore */ } }));
       const meta = it.loading ? 'Reading' : it.error ? it.error : `${plural(it.pageCount, 'page')} · ${fmtBytes(it.size)}`;
       const row = h('div', { class: 'row' + (it.error ? ' bad' : ''), role: 'listitem' }, thumb,
-        h('div', { class: 'rinfo' }, h('span', { class: 'rname', title: it.name }, it.name), h('span', { class: 'rmeta' + (it.error ? ' err' : '') }, meta)),
+        h('div', { class: 'rinfo' }, h('span', { class: 'rname', 'data-notr': '', title: it.name }, it.name), h('span', { class: 'rmeta' + (it.error ? ' err' : '') }, meta)),
         h('div', { class: 'rbtns' },
           h('button', { class: 'iconbtn', 'aria-label': 'Move up', disabled: idx === 0, onclick: () => { moveItem(items, idx, idx - 1, false); draw(); } }, ico('up', 18)),
           h('button', { class: 'iconbtn', 'aria-label': 'Move down', disabled: idx === items.length - 1, onclick: () => { moveItem(items, idx, idx + 1, true); draw(); } }, ico('down', 18)),
@@ -690,7 +695,7 @@ function toolImagesToPdf(root) {
       const thumb = h('div', { class: 'rthumb' }, h('canvas'));
       drawBitmapThumb(it.bmp, thumb.firstChild, 52 / 68);
       const row = h('div', { class: 'row', role: 'listitem' }, thumb,
-        h('div', { class: 'rinfo' }, h('span', { class: 'rname', title: it.file.name }, it.file.name), h('span', { class: 'rmeta' }, `${it.w} × ${it.h} px · ${fmtBytes(it.file.size)}`)),
+        h('div', { class: 'rinfo' }, h('span', { class: 'rname', 'data-notr': '', title: it.file.name }, it.file.name), h('span', { class: 'rmeta' }, `${it.w} × ${it.h} px · ${fmtBytes(it.file.size)}`)),
         h('div', { class: 'rbtns' },
           h('button', { class: 'iconbtn', 'aria-label': 'Move up', disabled: idx === 0, onclick: () => { moveItem(items, idx, idx - 1, false); draw(); } }, ico('up', 18)),
           h('button', { class: 'iconbtn', 'aria-label': 'Move down', disabled: idx === items.length - 1, onclick: () => { moveItem(items, idx, idx + 1, true); draw(); } }, ico('down', 18)),
@@ -1025,30 +1030,85 @@ function toolWatermark(root) {
 }
 
 /* =====================================================================
-   Tool registry
+   Tool registry (text comes from js/tools-meta.js)
    ===================================================================== */
-const TOOLS = [
-  { id: 'merge', name: 'Merge PDF', cat: 'organize', tint: 'sky', desc: 'Combine several PDFs into one file, in any order.', h1: 'Merge PDF files', sub: 'Join PDFs into a single document. Drag files to set the order.', mount: toolMerge },
-  { id: 'split', name: 'Split PDF', cat: 'organize', tint: 'sky', desc: 'Cut a PDF into separate files by page, range or size.', h1: 'Split a PDF', sub: 'Split into single pages, custom ranges or equal parts. Multiple files download as a ZIP.', mount: toolSplit },
-  { id: 'extract', name: 'Extract pages', cat: 'organize', tint: 'sky', desc: 'Pick the pages you need and save them as a new PDF.', h1: 'Extract pages from a PDF', sub: 'Click the pages you want to keep. They are saved in their original order.', mount: r => toolSelect(r, 'extract') },
-  { id: 'delete', name: 'Delete pages', cat: 'organize', tint: 'sky', desc: 'Remove the pages you do not want.', h1: 'Delete pages from a PDF', sub: 'Click the pages to remove, then save the rest as a new PDF.', mount: r => toolSelect(r, 'delete') },
-  { id: 'reorder', name: 'Reorder pages', cat: 'organize', tint: 'sky', desc: 'Drag pages into the order you want.', h1: 'Reorder PDF pages', sub: 'Drag pages to a new position. On touch screens, use the arrow buttons.', mount: toolReorder },
-  { id: 'rotate', name: 'Rotate PDF', cat: 'organize', tint: 'sky', desc: 'Turn sideways or upside-down pages the right way up.', h1: 'Rotate PDF pages', sub: 'Rotate single pages or the whole document.', mount: toolRotate },
-  { id: 'images-to-pdf', name: 'Images to PDF', cat: 'convert', tint: 'mint', desc: 'Turn JPG, PNG and WebP pictures into one PDF.', h1: 'Convert images to PDF', sub: 'Choose page size and margins, then put the images in order.', mount: toolImagesToPdf },
-  { id: 'pdf-to-images', name: 'PDF to images', cat: 'convert', tint: 'mint', desc: 'Save each page as a PNG, JPG or WebP picture.', h1: 'Convert PDF to images', sub: 'Pick a format and resolution. Several images download as a ZIP.', mount: toolPdfToImages },
-  { id: 'watermark', name: 'Add watermark', cat: 'edit', tint: 'lilac', desc: 'Stamp text or a logo across your pages.', h1: 'Add a watermark to a PDF', sub: 'Use text or an image. Set position, size, opacity and rotation.', mount: toolWatermark },
-  { id: 'compress', name: 'Compress PDF', cat: 'edit', tint: 'lilac', desc: 'Make a PDF smaller for email and uploads.', h1: 'Compress a PDF', sub: 'Shrink scanned or image-heavy PDFs by lowering image quality.', mount: toolCompress }
-];
+const MOUNTS = {
+  merge: toolMerge, split: toolSplit, extract: r => toolSelect(r, 'extract'), delete: r => toolSelect(r, 'delete'),
+  reorder: toolReorder, rotate: toolRotate, 'images-to-pdf': toolImagesToPdf, 'pdf-to-images': toolPdfToImages,
+  watermark: toolWatermark, compress: toolCompress
+};
+const TOOLS = window.PDFTK_TOOLS_META.map(m => Object.assign({}, m, { mount: MOUNTS[m.id] }));
 const CATS = [['all', 'All tools'], ['organize', 'Organize'], ['convert', 'Convert'], ['edit', 'Edit and optimize']];
+const SECTIONS = ['tools', 'privacy', 'faq', 'soon'];
+
+/* =====================================================================
+   URLs and navigation (real paths, so every tool has its own address)
+   ===================================================================== */
+const toolHref = id => BASE_PATH + id + '/';
+const homeHref = () => BASE_PATH;
+const sectionHref = name => BASE_PATH + '#' + name;
+function relPath(pathname) {
+  const p = pathname.startsWith(BASE_PATH) ? pathname.slice(BASE_PATH.length) : pathname;
+  return p.replace(/index\.html$/, '').replace(/\/+$/, '');
+}
+function scrollToSection(name) { const el = $('#sec-' + name); if (el) el.scrollIntoView(); }
+function navigate(url) {
+  const u = new URL(url, location.href);
+  const samePage = relPath(u.pathname) === relPath(location.pathname);
+  history.pushState(null, '', u.pathname + u.search + u.hash);
+  if (samePage && u.hash) scrollToSection(u.hash.slice(1)); else route();
+}
+document.addEventListener('click', e => {
+  if (e.defaultPrevented || e.button || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+  const a = e.target.closest && e.target.closest('a[href]');
+  if (!a || a.target || a.hasAttribute('download')) return;
+  const u = new URL(a.href, location.href);
+  if (u.origin !== location.origin || !u.pathname.startsWith(BASE_PATH)) return;
+  const rel = relPath(u.pathname);
+  if (rel !== '' && !TOOLS.some(t => t.id === rel)) return;
+  e.preventDefault();
+  navigate(u.pathname + u.search + u.hash);
+});
+window.addEventListener('popstate', route);
+
+/* Older links used #/merge style addresses. Turn them into real paths. */
+(function upgradeLegacyHash() {
+  const m = location.hash.match(/^#\/([\w-]*)$/);
+  if (!m) return;
+  const id = m[1];
+  if (TOOLS.some(t => t.id === id)) history.replaceState(null, '', toolHref(id));
+  else if (SECTIONS.includes(id)) history.replaceState(null, '', sectionHref(id));
+  else if (id === '') history.replaceState(null, '', homeHref());
+})();
 
 /* =====================================================================
    Pages
    ===================================================================== */
+function setTitle(fn) {
+  state.titleFn = fn;
+  document.title = fn();
+}
 function logo() {
-  return h('a', { class: 'logo', href: '#/', 'aria-label': 'PDF Toolkit home' },
+  return h('a', { class: 'logo', href: homeHref(), 'aria-label': 'PDF Toolkit home' },
     h('span', { html: '<svg width="30" height="34" viewBox="0 0 30 34" aria-hidden="true"><path d="M0 0h21l9 9v25H0z" fill="var(--ink)"/><path d="M21 0v9h9z" fill="var(--hi)"/><rect x="5" y="17" width="20" height="6" fill="var(--hi)" transform="skewX(-6)" /><rect x="5" y="26" width="13" height="2.5" rx="1.2" fill="var(--bg)"/></svg>' }), 'PDF Toolkit');
 }
 function currentTheme() { return document.documentElement.getAttribute('data-theme') || (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'); }
+function langButton() {
+  const next = I18N.get() === 'fil' ? 'en' : 'fil';
+  return h('button', {
+    class: 'btn small ghost langbtn', 'data-notr': '', lang: next,
+    'aria-label': next === 'fil' ? 'Switch to Filipino' : 'Lumipat sa English',
+    onclick: () => { I18N.set(next); try { localStorage.setItem('pdftk-lang', next); } catch (_) { /* storage may be unavailable */ } }
+  }, next === 'fil' ? 'Filipino' : 'English');
+}
+function updateInstall() {
+  const slot = $('#install-slot');
+  if (!slot) return;
+  slot.replaceChildren(state.install ? h('button', { class: 'btn small ghost install-btn', onclick: async () => {
+    const ev = state.install; state.install = null; updateInstall();
+    try { ev.prompt(); await ev.userChoice; } catch (_) { /* ignore */ }
+  } }, ico('download', 16), h('span', { class: 'txt' }, 'Install app')) : '');
+}
 function header() {
   const dark = currentTheme() === 'dark';
   const tbtn = h('button', { class: 'iconbtn', 'aria-label': dark ? 'Switch to light mode' : 'Switch to dark mode', onclick: () => {
@@ -1058,30 +1118,33 @@ function header() {
     tbtn.replaceChildren(ico(next === 'dark' ? 'sun' : 'moon', 20)); tbtn.setAttribute('aria-label', next === 'dark' ? 'Switch to light mode' : 'Switch to dark mode');
   } }, ico(dark ? 'sun' : 'moon', 20));
   return h('header', { class: 'site-header' }, h('div', { class: 'wrap' }, logo(),
-    h('nav', { 'aria-label': 'Main' }, h('a', { href: '#/tools' }, 'Tools'), h('a', { class: 'opt', href: '#/privacy' }, 'Privacy'), h('a', { class: 'opt', href: '#/faq' }, 'FAQ')), tbtn));
+    h('nav', { 'aria-label': 'Main' }, h('a', { href: sectionHref('tools') }, 'Tools'), h('a', { class: 'opt', href: sectionHref('privacy') }, 'Privacy'), h('a', { class: 'opt', href: sectionHref('faq') }, 'FAQ')),
+    h('span', { id: 'install-slot' }), langButton(), tbtn));
 }
 function footer() {
+  const support = CONFIG.supportUrl && h('a', { class: 'support', href: CONFIG.supportUrl, target: '_blank', rel: 'noopener' }, CONFIG.supportLabel);
   return h('footer', {}, h('div', { class: 'wrap' },
     h('span', {}, 'PDF Toolkit. Free, and your files stay on your device.'),
+    support,
     h('span', {}, 'Built with ', h('a', { href: 'https://pdf-lib.js.org', target: '_blank', rel: 'noopener' }, 'pdf-lib'), ', ', h('a', { href: 'https://mozilla.github.io/pdf.js/', target: '_blank', rel: 'noopener' }, 'PDF.js'), ' and ', h('a', { href: 'https://stuk.github.io/jszip/', target: '_blank', rel: 'noopener' }, 'JSZip'), '.')));
 }
 
 function renderHome() {
-  document.title = 'PDF Toolkit: free PDF tools that run in your browser';
+  setTitle(() => I18N.t('PDF Toolkit: free PDF tools that run in your browser'));
   const sheet = (cls, kids) => h('div', { class: 'sheet-wrap ' + cls }, h('div', { class: 'sheet' }, ...kids));
   const line = w => h('i', { style: { width: w } });
   const hero = h('section', { class: 'wrap hero' },
     h('div', {},
       h('h1', {}, 'Edit PDFs without uploading them.'),
       h('p', { class: 'lede' }, 'Merge, split, rotate, compress and convert PDFs right in your browser. It is free, needs no sign-up, and your files never leave your device.'),
-      h('div', { class: 'cta' }, h('a', { class: 'btn hi', href: '#/tools' }, 'Choose a tool'), h('a', { class: 'btn', href: '#/privacy' }, 'How is that possible?'))),
+      h('div', { class: 'cta' }, h('a', { class: 'btn hi', href: sectionHref('tools') }, 'Choose a tool'), h('a', { class: 'btn', href: sectionHref('privacy') }, 'How is that possible?'))),
     h('div', { class: 'hero-art', 'aria-hidden': 'true' },
       sheet('sw1', [line('70%'), line('90%'), line('60%')]),
       sheet('sw2', [line('55%'), line('85%'), line('75%'), line('40%')]),
       sheet('sw3', [h('b', {}, 'Q3 report.pdf'), line('92%'), line('80%'), h('div', { class: 'hl' }, line('88%')), line('70%'), line('84%'), line('50%')]),
       h('div', { class: 'stamp' }, ico('lock', 18), 'Stays on your device')));
 
-  const grid = h('div', { class: 'grid' }, TOOLS.map(t => h('a', { class: 'tile', href: '#/' + t.id, 'data-cat': t.cat, style: { '--tint': `var(--${t.tint})` } }, ico(t.id, 30), h('h3', {}, t.name), h('p', {}, t.desc))));
+  const grid = h('div', { class: 'grid' }, TOOLS.map(t => h('a', { class: 'tile', href: toolHref(t.id), 'data-cat': t.cat, style: { '--tint': `var(--${t.tint})` } }, ico(t.id, 30), h('h3', {}, t.name), h('p', {}, t.desc))));
   const chips = h('div', { class: 'chips', role: 'group', 'aria-label': 'Filter tools' }, CATS.map(([id, label], k) => h('button', { class: 'chip' + (k === 0 ? ' on' : ''), 'aria-pressed': String(k === 0), onclick: e => {
     chips.querySelectorAll('.chip').forEach(c => { c.classList.remove('on'); c.setAttribute('aria-pressed', 'false'); });
     e.currentTarget.classList.add('on'); e.currentTarget.setAttribute('aria-pressed', 'true');
@@ -1118,34 +1181,59 @@ function renderHome() {
 }
 
 function renderTool(t) {
-  document.title = `${t.name}: free, in your browser | PDF Toolkit`;
+  setTitle(() => I18N.get() === 'en' ? t.title : I18N.t(t.name) + ' | PDF Toolkit');
   const body = h('div', { class: 'tool-body' });
+  const info = h('section', { class: 'tool-info' },
+    h('h2', {}, 'How to use this tool'),
+    h('ol', { class: 'steps' }, t.steps.map(step => h('li', {}, h('div', {}, h('strong', {}, step))))),
+    h('h2', {}, 'Good to know'),
+    h('h3', {}, t.faq.q), h('p', { class: 'sub' }, t.faq.a));
   const view = h('main', { class: 'wrap tool', id: 'main' },
-    h('a', { class: 'back', href: '#/' }, ico('back', 18), 'All tools'),
-    h('nav', { class: 'toolnav', 'aria-label': 'Tools' }, TOOLS.map(x => h('a', { class: 'chip' + (x.id === t.id ? ' on' : ''), href: '#/' + x.id, 'aria-current': x.id === t.id ? 'page' : null }, x.name))),
+    h('a', { class: 'back', href: homeHref() }, ico('back', 18), 'All tools'),
+    h('nav', { class: 'toolnav', 'aria-label': 'Tools' }, TOOLS.map(x => h('a', { class: 'chip' + (x.id === t.id ? ' on' : ''), href: toolHref(x.id), 'aria-current': x.id === t.id ? 'page' : null }, x.name))),
     h('h1', {}, t.h1), h('p', { class: 'lede small' }, t.sub),
     h('p', { class: 'privacy-note' }, ico('lock', 16), 'Runs in your browser. Files are never uploaded.'),
-    body);
+    body, info);
   t.mount(body);
   return view;
 }
 
 function route() {
   if (state.task) state.task.cancelled = true;
-  const raw = location.hash.replace(/^#\/?/, '');
-  const tool = TOOLS.find(t => t.id === raw);
+  const rel = relPath(location.pathname);
+  const tool = TOOLS.find(t => t.id === rel);
+  const section = location.hash.replace(/^#\/?/, '');
   const app = $('#app');
   if (!libsReady()) {
     app.replaceChildren(h('div', { class: 'banner', role: 'alert' }, 'The PDF libraries could not be loaded. Check your internet connection and reload the page.'), header(), tool ? renderTool(tool) : renderHome());
   } else {
     app.replaceChildren(header(), tool ? renderTool(tool) : renderHome(), footer());
   }
-  const sec = ['tools', 'privacy', 'faq', 'soon'].includes(raw) ? $('#sec-' + raw) : null;
-  if (sec) requestAnimationFrame(() => sec.scrollIntoView()); else window.scrollTo(0, 0);
+  updateInstall();
+  if (!tool && SECTIONS.includes(section)) requestAnimationFrame(() => scrollToSection(section)); else window.scrollTo(0, 0);
 }
 
+/* Install as an app (Chrome, Edge, Android) */
+window.addEventListener('beforeinstallprompt', e => { e.preventDefault(); state.install = e; updateInstall(); });
+window.addEventListener('appinstalled', () => { state.install = null; updateInstall(); });
+
+/* Offline support */
+if ('serviceWorker' in navigator && /^https?:$/.test(location.protocol)) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register(BASE_PATH + 'sw.js', { scope: BASE_PATH }).catch(() => { /* not critical */ });
+  });
+}
+
+/* Start: theme, language, first render */
 try { const t = localStorage.getItem('pdftk-theme'); if (t === 'dark' || t === 'light') document.documentElement.setAttribute('data-theme', t); } catch (_) { /* storage may be unavailable */ }
-window.addEventListener('hashchange', route);
+let startLang = 'en';
+try { startLang = localStorage.getItem('pdftk-lang') || ''; } catch (_) { /* storage may be unavailable */ }
+if (!startLang) startLang = (navigator.languages || [navigator.language || '']).some(l => /^(fil|tl)\b/i.test(l)) ? 'fil' : 'en';
+I18N.onChange(() => {
+  if (state.titleFn) document.title = state.titleFn();
+  const old = $('.langbtn'); if (old) old.replaceWith(langButton());
+});
+I18N.start(startLang);
 route();
 window.__pdftk = { TOOLS };
 })();
