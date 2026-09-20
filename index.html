@@ -7,18 +7,55 @@
 <meta name="color-scheme" content="light dark">
 <title>PDF Toolkit: free PDF tools that run in your browser</title>
 <meta name="description" content="Merge, split, rotate, compress and convert PDFs for free. Everything runs in your browser, so your files never leave your device.">
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%93%84%3C/text%3E%3C/svg%3E">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="PDF Toolkit">
+<meta property="og:title" content="PDF Toolkit: free PDF tools that run in your browser">
+<meta property="og:description" content="Merge, split, rotate, compress and convert PDFs for free. Everything runs in your browser, so your files never leave your device.">
+<meta name="twitter:card" content="summary">
+<meta name="theme-color" content="#f3f5f9" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0e1116" media="(prefers-color-scheme: dark)">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png">
+<link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
 <link rel="preload" href="fonts/bricolage-grotesque-latin-wght-normal.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="css/style.css">
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"PDF Toolkit","description":"Merge, split, rotate, compress and convert PDFs for free. Everything runs in your browser, so your files never leave your device.","applicationCategory":"UtilitiesApplication","operatingSystem":"Any","browserRequirements":"Requires a modern web browser","offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}</script>
 </head>
 <body>
 <noscript><div class="banner">PDF Toolkit needs JavaScript to process files in your browser.</div></noscript>
-<div id="app"></div>
+<div id="app">
+<main class="wrap hero" id="main">
+<div>
+<h1>Edit PDFs without uploading them.</h1>
+<p class="lede">Merge, split, rotate, compress and convert PDFs right in your browser. It is free, needs no sign-up, and your files never leave your device.</p>
+</div>
+</main>
+<section class="wrap section">
+<h2>Pick a tool</h2>
+<div class="grid">
+<a class="tile tint-sky" href="merge/"><h3>Merge PDF</h3><p>Combine several PDFs into one file, in any order.</p></a>
+<a class="tile tint-sky" href="split/"><h3>Split PDF</h3><p>Cut a PDF into separate files by page, range or size.</p></a>
+<a class="tile tint-sky" href="extract/"><h3>Extract pages</h3><p>Pick the pages you need and save them as a new PDF.</p></a>
+<a class="tile tint-sky" href="delete/"><h3>Delete pages</h3><p>Remove the pages you do not want.</p></a>
+<a class="tile tint-sky" href="reorder/"><h3>Reorder pages</h3><p>Drag pages into the order you want.</p></a>
+<a class="tile tint-sky" href="rotate/"><h3>Rotate PDF</h3><p>Turn sideways or upside-down pages the right way up.</p></a>
+<a class="tile tint-mint" href="images-to-pdf/"><h3>Images to PDF</h3><p>Turn JPG, PNG and WebP pictures into one PDF.</p></a>
+<a class="tile tint-mint" href="pdf-to-images/"><h3>PDF to images</h3><p>Save each page as a PNG, JPG or WebP picture.</p></a>
+<a class="tile tint-lilac" href="watermark/"><h3>Add watermark</h3><p>Stamp text or a logo across your pages.</p></a>
+<a class="tile tint-lilac" href="compress/"><h3>Compress PDF</h3><p>Make a PDF smaller for email and uploads.</p></a>
+</div>
+</section>
+</div>
 <div id="toasts" aria-live="polite"></div>
 
 <script src="vendor/pdf-lib.min.js"></script>
 <script src="vendor/pdf.min.js"></script>
 <script src="vendor/jszip.min.js"></script>
+<script src="js/i18n.js"></script>
+<script src="js/lang/fil.js"></script>
+<script src="js/config.js"></script>
+<script src="js/tools-meta.js"></script>
 <script src="js/app.js"></script>
 </body>
 </html>
